@@ -2,11 +2,7 @@
 const getProductId = (paramId) => new URL(document.location).searchParams.get(paramId)
 
 // Fonction Call API via l'ID du produit
-export async function fetchProduct (productId) {
-    const response = await fetch(`http://localhost:3000/api/products/${productId}`)
-    const product = await response.json()
-    return product
-}
+import {fetchProduct} from "./function.js"
 
 // Affichage des infos produits
 const affichageInfosProduits = async() => {
@@ -14,8 +10,10 @@ const affichageInfosProduits = async() => {
     const productId = getProductId("id")
     
     // Récupération des éléments du DOM
-    const productImg = document.getElementById("imgproduct")
-    // const imgContainer = document.getElementsByClassName("item__img")
+    // const productImg = document.getElementById("imgproduct")
+    const imgContainer = document.querySelector(".item__img")
+    console.log(imgContainer)
+
     const productName = document.getElementById("title")
     const productPrice = document.getElementById("price")
     const productDescription = document.getElementById("description")
@@ -26,19 +24,19 @@ const affichageInfosProduits = async() => {
         const product = await fetchProduct (productId)
         console.log(product)
 
-        // const productImg = document.createElement("img")
-        // productImg.src = product.imageUrl
-        // imgContainer.innerHTML = ''
-        // imgContainer.appendChild(productImg)
+        const productImg = document.createElement("img")
+        productImg.src = product.imageUrl
+        imgContainer.innerHTML = ''
+        imgContainer.appendChild(productImg)
 
         // Traitement des informations du produit contenu dans le tableau
-        productImg.src = product.imageUrl
+        // productImg.src = product.imageUrl
         productName.innerHTML = product.name
         productPrice.innerHTML = product.price
         productDescription.innerHTML = product.description
 
-        // imgContainer.innerHTML = 
-        //     `<img src="${product.imageUrl}" alt="${product.altTxt}">`
+        imgContainer.innerHTML = 
+            `<img src="${product.imageUrl}" alt="${product.altTxt}">`
 
         // Traitement des options de couleurs 
         product.colors.forEach(colorArticle => {
@@ -53,9 +51,9 @@ const affichageInfosProduits = async() => {
         });
 
     // Affiche un message d'erreur si le serveur ne répond pas
-    } catch {
-        // alert('Une erreur est survenue')
-        console.log("erreur")
+    } catch (error){
+        alert('Une erreur est survenue')
+        console.log(error)
     }
 }
 // affichageInfosProduits()
@@ -106,15 +104,15 @@ function verificationDuPanier () {
         productChoice.id == item.id &&
         productChoice.color == item.color
     )
-    console.log(productFound, "ici")
-    console.log("Vérification doublon")
+    // console.log(productFound, "ici")
+    // console.log("Vérification doublon")
 
     // Si le produit n'existe pas dans le localStorage, ajoute le produit
     if (!productLocalStorage.length || !productFound) {
         productLocalStorage.push(productChoice)
         localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
         
-        console.log("crée un nouvel objet")
+        // console.log("crée un nouvel objet")
     } else {
         // Si un doublon est présent, incrémenter la quantité du produit
         productFound.quantity =         // la quantité du produit présent dans le localStorage est égale à
@@ -122,7 +120,7 @@ function verificationDuPanier () {
         productChoice.quantity           // la quantité voulue par l'utilisateur
         localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
 
-        console.log("doublon présent, augmente la quantité")
+        // console.log("doublon présent, augmente la quantité")
     }
 }
 
@@ -132,6 +130,6 @@ const buttonAddCart = document.getElementById("addToCart")
 // Au click sur le bouton, exécute la fonction de vérification du panier
 buttonAddCart.addEventListener('click', function (){
     verificationDuPanier ()
-} )
+})
 affichageInfosProduits ()
 
