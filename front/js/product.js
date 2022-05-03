@@ -10,10 +10,7 @@ const affichageInfosProduits = async() => {
     const productId = getProductId("id")
     
     // Récupération des éléments du DOM
-    // const productImg = document.getElementById("imgproduct")
     const imgContainer = document.querySelector(".item__img")
-    console.log(imgContainer)
-
     const productName = document.getElementById("title")
     const productPrice = document.getElementById("price")
     const productDescription = document.getElementById("description")
