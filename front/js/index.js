@@ -24,13 +24,13 @@ const createArticle = product => {
     containerArticle.appendChild(link)
 }
 
-// Call API
+// Affichage des produits
 const displayProductsInfos = async function () {
     const response = await fetch('http://localhost:3000/api/products')
     const products = await response.json()
     // console.log(products)
     
-    // Pour chaque produit, crée un article
+    // Pour chaque produit de l'API, crée un article
     products.forEach(product => {
         createArticle(product)
     });
