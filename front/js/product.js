@@ -1,14 +1,13 @@
-// Récupération de l'ID sur l'url
-const getProductId = (paramId) => new URL(document.location).searchParams.get(paramId)
-
-// Fonction Call API via l'ID du produit
+// Importation de la fonction Call API via l'ID du produit
 import {fetchProduct} from "./function.js"
 
-// Affichage des infos produits
-const affichageInfosProduits = async() => {
-    // Récupération de l'Id du produit
-    const productId = getProductId("id")
-    
+// Récupération de l'ID sur l'url
+const getProductId = (paramId) => new URL(document.location).searchParams.get(paramId)
+// Récupération de l'Id du produit
+const productId = getProductId("id")
+
+// Affichage des informations du produit
+const displayProductsInfos = async() => {
     // Récupération des éléments du DOM
     const imgContainer = document.querySelector(".item__img")
     const productName = document.getElementById("title")
@@ -18,22 +17,15 @@ const affichageInfosProduits = async() => {
 
     // Si le serveur réponds
     try {
+        // Récupération des informations du produit via son ID
         const product = await fetchProduct (productId)
         console.log(product)
 
-        const productImg = document.createElement("img")
-        productImg.src = product.imageUrl
-        imgContainer.innerHTML = ''
-        imgContainer.appendChild(productImg)
-
         // Traitement des informations du produit contenu dans le tableau
-        // productImg.src = product.imageUrl
         productName.innerHTML = product.name
         productPrice.innerHTML = product.price
         productDescription.innerHTML = product.description
-
-        imgContainer.innerHTML = 
-            `<img src="${product.imageUrl}" alt="${product.altTxt}">`
+        imgContainer.innerHTML = `<img src="${product.imageUrl}" alt="${product.altTxt}">`
 
         // Traitement des options de couleurs 
         product.colors.forEach(colorArticle => {
@@ -46,87 +38,89 @@ const affichageInfosProduits = async() => {
             // Place l'élément à l'intérieur du container
             color.appendChild(colorOption)
         });
-
     // Affiche un message d'erreur si le serveur ne répond pas
     } catch (error){
         alert('Une erreur est survenue')
         console.log(error)
     }
 }
-// affichageInfosProduits()
+displayProductsInfos()
+
+// Vérifie si la quantité choisie est conforme
+function checkQuantityChoice (productChoice) {
+    if (productChoice.quantity <= 0 || productChoice.quantity > 100){
+        // Envoi un message d'erreur si la quantité est inférieur ou égale à 0 ou supérieur à 100
+        return alert("Veuillez choisir une quantité comprise entre 1 et 100.")
+    } 
+    return true
+}
+// Vérifie si une option de couleur à été choisi
+function checkColorChoice (productChoice) {
+    if (productChoice.color == "") {
+        // Envoi un message d'erreur si la couleur n'a pas été séléctionné
+        return alert("Veuillez choisir une couleur")
+    } 
+    return true
+}
 
 // Vérification des informations avant l'ajout au panier
-function verificationDuPanier () {
+function checkBeforeAddToCart () {
     // Récupération des éléments du DOM
     const productQuantity = document.getElementById("quantity")
     const productColor = document.getElementById("colors")
-    const idProduct = getProductId("id")
-    // console.log(productId)
-
-    // Récupération des choix de l'utilisateur
-    const colorChoice = productColor.value
-    const quantityChoice = parseInt(productQuantity.value, 10)
-
-    // Vérification des conditions d'envoi au panier
-    // Envoi un message d'erreur si la quantité est inférieur ou égale à 0 ou supérieur à 100
-    if (quantityChoice <= 0 || quantityChoice > 100){
-        return alert("Veuillez choisir une quantité")
     
-    // Envoi un message d'erreur si la couleur n'a pas été séléctionné
-    } else if (colorChoice == ""){
-        alert("Veuillez choisir une couleur")
+    // Sauvegarde des choix de l'utilisateur dans un objet pour l'envoyer dans le localStorage
+    const productChoice = {
+        id: productId,
+        quantity: parseInt(productQuantity.value, 10),
+        color: productColor.value,
+    }
+
+    const quantityValid = checkQuantityChoice(productChoice)
+    const colorValid = checkColorChoice(productChoice)
+    // Si la couleur et une quantité sont choisies 
+    if (quantityValid && colorValid) {
+        return productChoice  
+    } else {
         return
     }
+}
 
-    // Sauvegarde des choix de l'utilisateur pour l'envoyer dans le localStorage
-    const productChoice = {
-        id: idProduct,
-        quantity: quantityChoice,
-        color: colorChoice,
-    }
-    console.log(productChoice, "choix quantité et couleur utilisateur")
-
-    //
-    // LocalStorage
-    // 
-
+// Fonction d'ajout au panier
+function addToCart (productChoice) {
     // Vérifie si le produit n'est pas déjà présent dans le localStorage ou crée un tableau vide
     let productLocalStorage = JSON.parse(localStorage.getItem("productsInCart")) || []
-
-    console.log(productLocalStorage, "tableau produit dans le local storage")
-    // console.log(localStorage, "local Storage")
     
     // Vérifie la présence d'un produit ayant la même ID et couleur dans le localStorage
     const productFound = productLocalStorage.find((item) =>          
         productChoice.id == item.id &&
         productChoice.color == item.color
     )
-    // console.log(productFound, "ici")
-    // console.log("Vérification doublon")
+    // console.log(productFound)
 
     // Si le produit n'existe pas dans le localStorage, ajoute le produit
     if (!productLocalStorage.length || !productFound) {
         productLocalStorage.push(productChoice)
         localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
-        
-        // console.log("crée un nouvel objet")
+        alert("Votre produit a été ajouté au panier. ")
     } else {
-        // Si un doublon est présent, incrémenter la quantité du produit
-        productFound.quantity =         // la quantité du produit présent dans le localStorage est égale à
-        productFound.quantity +         // la quantité du produit dans le localStorage +
-        productChoice.quantity           // la quantité voulue par l'utilisateur
+        // Si un doublon est présent, incrémenter la quantité du produit   
+        productFound.quantity += productChoice.quantity   
+        // Enregistre les modifications dans le localStorage
         localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
-
-        // console.log("doublon présent, augmente la quantité")
+        alert("Votre produit a été ajouté au panier. ")
     }
 }
 
-
 // Séléction du bouton "Ajouter au panier"
 const buttonAddCart = document.getElementById("addToCart")
-// Au click sur le bouton, exécute la fonction de vérification du panier
-buttonAddCart.addEventListener('click', function (){
-    verificationDuPanier ()
+// Au clique sur le bouton, exécute la fonction de vérification du panier
+buttonAddCart.addEventListener('click', function (e){
+    e.preventDefault()
+    // Résultat de la fonction
+    const userChoice = checkBeforeAddToCart ()
+    // Si l'ensemble des conditions sont remplies, ajoute le produit au panier
+    if (userChoice !== undefined) {
+        addToCart(userChoice)
+    }
 })
-affichageInfosProduits ()
-

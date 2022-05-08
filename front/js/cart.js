@@ -1,50 +1,55 @@
-// Fonction Call API via l'ID du produit
+// Importation de la fonction Call API via l'ID du produit
 import {fetchProduct} from "./function.js"
 
 // Récupération des données du localStorage
 let productLocalStorage = JSON.parse(localStorage.getItem("productsInCart"))
 
-// Affichage des produits dans le panier
-const displayProductsInCart = async function () {
-    // Si le panier est vide
+// Affichage du panier vide
+function displayCartIsEmpty () {
     if(productLocalStorage === null || productLocalStorage == 0) {
-        console.log("Panier vide")
         document.getElementById("cart__items").innerHTML =
         `<div>
-            <p> Votre panier est vide </p>
+            <p> Votre panier est vide, veuillez choisir un article. </p>
         </div>`
-    } else {
-        // Si le panier contient des articles, pour chaque produit présent dans le localStorage, créer un article
-        const promises = productLocalStorage.map(async product => {
-            const myProduct = await fetchProduct(product.id)
-            //console.log(myProduct)
-            document.getElementById('cart__items').innerHTML += 
-            `
-                <article class="cart__item" data-id="${product.id}" data-color="${product.color}">
-                    <div class="cart__item__img">
-                    <img src="${myProduct.imageUrl}" alt="${myProduct.alt}">
+        // Remise à 0 du prix total du panier
+        document.getElementById("totalPrice").innerHTML = ""
+    }    
+}
+displayCartIsEmpty()
+
+// Affichage des produits dans le panier
+const displayProductsInCart = async function () {
+    // Pour chaque produit présent dans le localStorage, créer un article
+    const promises = productLocalStorage.map(async product => {
+        // Récupère via l'ID, les informations de chaque produit du panier
+        const myProduct = await fetchProduct(product.id)
+        // Affichage d'un article
+        document.getElementById('cart__items').innerHTML += 
+        `
+            <article class="cart__item" data-id="${product.id}" data-color="${product.color}">
+                <div class="cart__item__img">
+                <img src="${myProduct.imageUrl}" alt="${myProduct.alt}">
+                </div>
+                <div class="cart__item__content">
+                <div class="cart__item__content__description">
+                    <h2>${myProduct.name}</h2>
+                    <p>${product.color}</p>
+                    <p>${myProduct.price} €</p>
+                </div>
+                <div class="cart__item__content__settings">
+                    <div class="cart__item__content__settings__quantity">
+                    <p>Qté : </p>
+                    <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}">
                     </div>
-                    <div class="cart__item__content">
-                    <div class="cart__item__content__description">
-                        <h2>${myProduct.name}</h2>
-                        <p>${product.color}</p>
-                        <p>${myProduct.price} €</p>
+                    <div class="cart__item__content__settings__delete">
+                    <p class="deleteItem">Supprimer</p>
                     </div>
-                    <div class="cart__item__content__settings">
-                        <div class="cart__item__content__settings__quantity">
-                        <p>Qté : </p>
-                        <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}">
-                        </div>
-                        <div class="cart__item__content__settings__delete">
-                        <p class="deleteItem">Supprimer</p>
-                        </div>
-                    </div>
-                    </div>
-                </article>
-            `
-        })
-        await Promise.all(promises)
-    }
+                </div>
+                </div>
+            </article>
+        `
+    })
+    await Promise.all(promises) 
 }
 await displayProductsInCart()
 
@@ -67,15 +72,17 @@ function updateQuantity () {
 
             // Produit trouvé ayant le même Id et couleur 
             const productFound = productLocalStorage.find((item) => item.id === articleId && item.color === articleColor)
-            // Remplace la quantité du produit trouvé par la quantité saisie
+            
             if (productFound.quantity != newQuantity) {
+                // Remplace la quantité du produit trouvé par la quantité saisie
                 productFound.quantity = newQuantity
                 // console.log(productLocalStorage,"après")
             }
+            // Enregistre les modifications dans le localStorage
             localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
             
-            totalQuantity()
-            totalPrice()
+            totalCartQuantity()
+            totalCartPrice()
         })
     })
 }
@@ -97,39 +104,40 @@ function deleteProduct () {
             productLocalStorage = productLocalStorage.filter(product => product.id !== articleId || product.color !== articleColor)
             // Mets à jour le localStorage
             localStorage.setItem("productsInCart", JSON.stringify(productLocalStorage))
-            // mettre a jour le dom
-            // récupérer avec query selector l'article
-            // location.reload()
-            totalQuantity()
-            totalPrice()
+            // Supprime le produit séléctionné de l'aperçu de la page
+            articleTarget.parentElement.removeChild(articleTarget)
+
+            totalCartPrice()
+            totalCartQuantity()
+            displayCartIsEmpty()
         })
     })
-}
+}   
 deleteProduct ()
 
-// Quantité Total
-function totalQuantity () {
+// Calcul de la quantité totale d'articles dans le panier
+function totalCartQuantity () {
     // Séléction des conteneurs
     const quantityArticle = document.getElementById("totalQuantity")
     let totalArticle = 0 
-
+    // Additionne la quantité de chaque produit dans le panier
     productLocalStorage.forEach(product => {
-        const quantityProduct = product.quantity
-        totalArticle += quantityProduct
+        totalArticle += product.quantity
     })
-
+    // Affichage de la quantité totale d'articles
     quantityArticle.innerHTML = `${totalArticle}`
 }
-totalQuantity()
+totalCartQuantity()
 
-// Prix Total
-function totalPrice () {
+// Calcul du prix total du panier
+function totalCartPrice () {
     // Défini un prix de base
     let priceIndex = 0
     // Séléction du conteneur
     const priceContainer = document.getElementById("totalPrice")
 
     productLocalStorage.forEach(async product => {
+        // Récupère les informations du produit via son ID
         const myProduct = await fetchProduct(product.id)
         // Prix du produit * quantité du produit
         priceIndex += myProduct.price * product.quantity
@@ -137,7 +145,7 @@ function totalPrice () {
         priceContainer.innerHTML = `${priceIndex}`
     }) 
 }
-totalPrice()
+totalCartPrice()
 
 // Vérification du prénom
 function isFirstNameValid (contact) {
@@ -147,10 +155,9 @@ function isFirstNameValid (contact) {
       } else {
           document.getElementById("firstNameErrorMsg").innerHTML = "Veuillez saisir un prénom valide."
       }
-  }
-
+}
 // Vérification du nom
-function checkLastName (contact) {
+function isLastNameValid (contact) {
     document.getElementById("lastNameErrorMsg").innerHTML = ""
     if (/^([A-Za-z]{3,20})?([-]{0,1})?([A-Za-z]{3,20})$/.test(contact.lastName)) {
         return true
@@ -159,7 +166,7 @@ function checkLastName (contact) {
     }
 }
 // Vérification de l'adresse
-function checkAdress (contact) {
+function isAdressValid (contact) {
     document.getElementById("addressErrorMsg").innerHTML = ""
     if (/^[A-Za-z0-9\s]{3,100}$/.test(contact.address)) {
         return true
@@ -168,7 +175,7 @@ function checkAdress (contact) {
     }
 }
 // Vérification de la ville
-function checkCity (contact) {
+function isCityValid (contact) {
     document.getElementById("cityErrorMsg").innerHTML = ""
     if (/^([A-Za-z]{3,20})?([-]{0,1})?([A-Za-z]{3,20})$/.test(contact.city)) {
         return true
@@ -177,7 +184,7 @@ function checkCity (contact) {
     }
 }
 // Vérification de l'email
-function checkEmail (contact) {
+function isEmailValid (contact) {
     document.getElementById("emailErrorMsg").innerHTML = ""
     if (/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(contact.email)) {
         return true
@@ -196,19 +203,20 @@ function formCheck () {
         email: document.getElementById("email").value,
     }
     const firstNameValid = isFirstNameValid(contact)
-    const isLastNameValid = checkLastName(contact)
-    const isAdressValid = checkAdress(contact)
-    const isCityValid =  checkCity(contact)
-    const isEmailValid =  checkEmail(contact)
+    const lastNameValid = isLastNameValid(contact)
+    const adressValid = isAdressValid(contact)
+    const cityValid =  isCityValid(contact)
+    const emailValid =  isEmailValid(contact)
 
+    // Si le panier est vide
     if (productLocalStorage === null || productLocalStorage == 0){
         alert("Votre panier est vide, veuillez choisir un article.")
     } else if ( 
         firstNameValid &&
-        isLastNameValid &&
-        isAdressValid &&
-        isCityValid &&
-        isEmailValid
+        lastNameValid &&
+        adressValid &&
+        cityValid &&
+        emailValid
     ) {
         return contact
     } else {
@@ -217,34 +225,38 @@ function formCheck () {
     }
 }
 
-// Formulaire
+// Validation de la commande
 async function validOrder (contact) {
-    // Récupération des Id de chaque produit dans un tableau
+    // Récupération des Id de chaque produit présent dans le panier
     const productsId = productLocalStorage.map(product => product.id)
 
     // Création d'un objet pour stocker la commande et les informations du client
     const orderInit = {products:productsId, contact}
-    console.log(orderInit,"ici")
+    console.log(orderInit,"Panier et infos client")
 
-    // Fetch API
+    // Envoi une requête à l'API
     const response = await fetch("http://localhost:3000/api/products/order", {
         method: "POST",
         body: JSON.stringify(orderInit),
         headers: {"Content-Type": "application/json"}
     })
+    // Récupération du numéro de commande
     const order = await response.json()        
-    // Si la commande est validé, redirige sur la page de confirmation
+    // Vide le localStorage
     localStorage.clear()
     alert("Votre commande a bien été validée")
+    // Redirige sur la page de confirmation
     document.location.href = `confirmation.html?id=${order.orderId}`
 }
 
 // Séléction du boutton "Commander"
 const orderButton = document.getElementById("order")
-// Event listenner sur le bouton
+// Event listenner au clique sur le bouton de commande
 orderButton.addEventListener('click', function (e){
     e.preventDefault()
+    // Résultat de la fonction
     const contact = formCheck()
+    // Si l'ensemble des conditions sont remplies, valide la commande
     if (contact !== undefined) {
         validOrder(contact)
     }
