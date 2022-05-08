@@ -4,48 +4,52 @@ import {fetchProduct} from "./function.js"
 // Récupération des données du localStorage
 let productLocalStorage = JSON.parse(localStorage.getItem("productsInCart"))
 
-// Affichage des produits dans le panier
-const displayProductsInCart = async function () {
-    // Si le panier est vide
+// Affichage du panier vide
+function displayCartIsEmpty () {
     if(productLocalStorage === null || productLocalStorage == 0) {
         document.getElementById("cart__items").innerHTML =
         `<div>
             <p> Votre panier est vide, veuillez choisir un article. </p>
         </div>`
-        console.log("Panier vide")
-    } else {
-        // Si le panier contient des articles, pour chaque produit présent dans le localStorage, créer un article
-        const promises = productLocalStorage.map(async product => {
-            // Récupère via l'ID, les informations de chaque produit du panier
-            const myProduct = await fetchProduct(product.id)
-            // Affichage d'un article
-            document.getElementById('cart__items').innerHTML += 
-            `
-                <article class="cart__item" data-id="${product.id}" data-color="${product.color}">
-                    <div class="cart__item__img">
-                    <img src="${myProduct.imageUrl}" alt="${myProduct.alt}">
+        // Remise à 0 du prix total du panier
+        document.getElementById("totalPrice").innerHTML = ""
+    }    
+}
+displayCartIsEmpty()
+
+// Affichage des produits dans le panier
+const displayProductsInCart = async function () {
+    // Pour chaque produit présent dans le localStorage, créer un article
+    const promises = productLocalStorage.map(async product => {
+        // Récupère via l'ID, les informations de chaque produit du panier
+        const myProduct = await fetchProduct(product.id)
+        // Affichage d'un article
+        document.getElementById('cart__items').innerHTML += 
+        `
+            <article class="cart__item" data-id="${product.id}" data-color="${product.color}">
+                <div class="cart__item__img">
+                <img src="${myProduct.imageUrl}" alt="${myProduct.alt}">
+                </div>
+                <div class="cart__item__content">
+                <div class="cart__item__content__description">
+                    <h2>${myProduct.name}</h2>
+                    <p>${product.color}</p>
+                    <p>${myProduct.price} €</p>
+                </div>
+                <div class="cart__item__content__settings">
+                    <div class="cart__item__content__settings__quantity">
+                    <p>Qté : </p>
+                    <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}">
                     </div>
-                    <div class="cart__item__content">
-                    <div class="cart__item__content__description">
-                        <h2>${myProduct.name}</h2>
-                        <p>${product.color}</p>
-                        <p>${myProduct.price} €</p>
+                    <div class="cart__item__content__settings__delete">
+                    <p class="deleteItem">Supprimer</p>
                     </div>
-                    <div class="cart__item__content__settings">
-                        <div class="cart__item__content__settings__quantity">
-                        <p>Qté : </p>
-                        <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.quantity}">
-                        </div>
-                        <div class="cart__item__content__settings__delete">
-                        <p class="deleteItem">Supprimer</p>
-                        </div>
-                    </div>
-                    </div>
-                </article>
-            `
-        })
-        await Promise.all(promises)
-    }
+                </div>
+                </div>
+            </article>
+        `
+    })
+    await Promise.all(promises) 
 }
 await displayProductsInCart()
 
@@ -103,11 +107,12 @@ function deleteProduct () {
             // Supprime le produit séléctionné de l'aperçu de la page
             articleTarget.parentElement.removeChild(articleTarget)
 
-            totalCartQuantity()
             totalCartPrice()
+            totalCartQuantity()
+            displayCartIsEmpty()
         })
     })
-}
+}   
 deleteProduct ()
 
 // Calcul de la quantité totale d'articles dans le panier

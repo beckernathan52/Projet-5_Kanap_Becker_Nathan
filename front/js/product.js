@@ -46,11 +46,11 @@ const displayProductsInfos = async() => {
 }
 displayProductsInfos()
 
-// Vérifie si la quantité choisi est conforme
+// Vérifie si la quantité choisie est conforme
 function checkQuantityChoice (productChoice) {
     if (productChoice.quantity <= 0 || productChoice.quantity > 100){
         // Envoi un message d'erreur si la quantité est inférieur ou égale à 0 ou supérieur à 100
-        return alert("Veuillez choisir une quantité")
+        return alert("Veuillez choisir une quantité comprise entre 1 et 100.")
     } 
     return true
 }
